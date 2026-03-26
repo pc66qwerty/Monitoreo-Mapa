@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mapa-vial
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_NAME
+        value: Monitor Vial GT
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        value: base64:b62XzKtaoUdi1vlMYvntNlRiSx+lMbjIbyj2/bCzSLE=
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: mapa-vial-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: LOG_LEVEL
+        value: error
+
+databases:
+  - name: mapa-vial-db
+    plan: free
+    databaseName: mapavial
