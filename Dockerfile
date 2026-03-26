@@ -1,32 +1,26 @@
-FROM php:8.3-cli
+FROM php:8.3-cli-alpine
 
-# Dependencias del sistema y extensiones PHP
-RUN apt-get update && apt-get install -y \
-    git curl zip unzip \
-    libpq-dev libzip-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip xml ctype \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Node.js 20
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs && apt-get clean
+# Dependencias del sistema y extensiones PHP (Alpine usa apk)
+RUN apk add --no-cache \
+    git curl zip unzip bash \
+    postgresql-dev libzip-dev oniguruma-dev libxml2-dev \
+    nodejs npm \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip xml ctype
 
 # Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY . .
 
-# Instalar dependencias PHP y compilar assets
-# (No corremos artisan aquí porque .env no existe en build time)
+# Instalar dependencias y compilar assets
 RUN composer install --no-dev --optimize-autoloader \
-    && npm ci \
+    && npm install \
     && npm run build \
     && rm -rf node_modules
 
 EXPOSE 10000
 
-# Al arrancar el contenedor: configurar, migrar y servir
 CMD php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache \
